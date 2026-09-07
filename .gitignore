@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Chroma vectorstore (generated, not to be versioned)
+vectorstore/
+docs/*/vectorstore/
