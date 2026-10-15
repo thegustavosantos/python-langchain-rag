@@ -1,0 +1,56 @@
+# Importações básicas
+import random
+import os
+
+from dotenv import load_dotenv
+
+# Loader de documentos PDF
+from langchain_community.document_loaders import PyPDFLoader
+
+# Divisão de texto em blocos
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Embeddings
+from langchain_openai import OpenAIEmbeddings
+
+# Banco vetorial
+from langchain_community.vectorstores import Chroma
+
+# LLM
+from langchain_openai import ChatOpenAI
+
+# Cadeia RAG
+from langchain.chains import RetrievalQA
+
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+
+files = [
+    "docs/pharmacy/dipirona.pdf",
+    "docs/pharmacy/paracetamol.pdf"
+]
+
+# 1. Carregando os documentos PDF e adicionando metadados
+documents = []
+for file_path in files:
+    # Carregando o documento PDF
+    pdf_loader = PyPDFLoader(file_path)
+    loaded_documents = pdf_loader.load()
+
+    for loaded_document in loaded_documents:
+        loaded_document.metadata["medication"] = file_path.split("/")[-1].replace(".pdf", "")
+    
+    documents.extend(loaded_documents)
+    print(f"Documento carregado: {loaded_document.metadata['medication']}")
+
+print(f"Total de documentos carregados: {len(documents)}")
+
+
+# 2. Criando as chunks
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=600,
+    chunk_overlap=150
+)
+
+chunks = text_splitter.split_documents(documents)
+print(f"Total de chunks criados: {len(chunks)}")
