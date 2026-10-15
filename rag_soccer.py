@@ -1,6 +1,8 @@
 # Importações básicas
-from dotenv import load_dotenv
+import random
 import os
+
+from dotenv import load_dotenv
 
 # Loader de documentos PDF
 from langchain_community.document_loaders import PyPDFLoader
@@ -37,7 +39,21 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 
 chunks = text_splitter.split_documents(documents)
+
+# Tamanho das chunks
 print(f"Tamanho dos chunks: {len(chunks)}")
+print(f"Metadados do primeiro chunk: {chunks[0].metadata}")
+
+# Exibindo 3 chunks aleatórios
+show_random_chunks = random.sample(chunks, 3)
+for i, chunk in enumerate(show_random_chunks, 1):
+    print(f"\n--- Chunk {i} ---")
+    print(f"Fonte: {chunk.metadata.get('source', 'N/A')}")
+    print(f"Página: {chunk.metadata.get('page', 'N/A')}")
+    print("Conteúdo:")
+    print(chunk.page_content)
+
+
 
 # 3. Embedding e banco vetorial
 # Cada bloco de texto será convertido em vetores semânticos e armazenado em um banco vetorial para recuperação eficiente.
