@@ -70,7 +70,12 @@ def rerank_documents(question, documents, llm):
 
     prompt_rerank = PromptTemplate(
         input_variables=["question", "text"],
-        template="""..."""
+        template="""Dê uma nota de relevância de 0 a 10 para o trecho em relação à pergunta.
+Considere 0 irrelevante e 10 altamente relevante. Responda somente com o número.
+
+Pergunta: {question}
+Trecho: {text}
+Nota:"""
     )
 
     documents_with_score = []
@@ -112,6 +117,45 @@ def create_qa_chain(question, vectorstore):
 
     context = "\n\n".join([doc.page_content for doc in best_documents])
 
-    prompt_final = f"""..."""
+    prompt_final = f"""Você é um assistente de Recursos Humanos. Responda em português usando somente o contexto abaixo.
+Se o contexto não contiver a resposta, diga que não encontrou essa informação nos documentos.
+
+Contexto:
+{context}
+
+Pergunta: {question}
+Resposta:"""
     answer = llm.invoke(prompt_final);
     return answer.content, best_documents
+
+
+st.title("Assistente de Recursos Humanos")
+
+with st.form("question_form"):
+    question = st.text_input("Sua pergunta")
+    submitted = st.form_submit_button("Perguntar")
+
+if submitted:
+    if not question.strip():
+        st.warning("Digite uma pergunta.")
+    elif not api_key:
+        st.error("A variável OPENAI_API_KEY não foi encontrada no arquivo .env.")
+    else:
+        try:
+            with st.spinner("Consultando os documentos..."):
+                documents = load_documents()
+                chunks = generate_chunks(documents)
+                enriched_chunks = enrich_chunks_with_metadata(chunks)
+                vectorstore = create_vectorstore(enriched_chunks)
+                answer, source_documents = create_qa_chain(question, vectorstore)
+
+            st.markdown(answer)
+            with st.expander("Fontes consultadas"):
+                for document in source_documents:
+                    source = document.metadata.get("source", "Documento")
+                    page = document.metadata.get("page")
+                    label = f"{source} - página {page + 1}" if isinstance(page, int) else source
+                    st.caption(label)
+                    st.write(document.page_content)
+        except Exception as error:
+            st.error(f"Não foi possível responder à pergunta: {error}")
